@@ -20,6 +20,9 @@
 SCRIPT_NAME=${0##*/} 
 SCRIPT_VERSION=1.1 
 
+# load hsdn environment variables if they are present
+[ -f /etc/default/hsdn ] && source /etc/default/hsdn
+
 instanceid=`wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`
 azone=`wget -q -O - http://169.254.169.254/latest/meta-data/placement/availability-zone`
 region=${azone/%?/}
@@ -317,7 +320,13 @@ if [ $FROM_CRON -eq 1 ]; then
 fi
 
 # CloudWatch Command Line Interface Option
-CLOUDWATCH_OPTS="--namespace System/Detail/Linux --dimensions InstanceId=$instanceid"
+CLOUDWATCH_OPTS="--namespace System/Detail/Linux"
+if [ -n "$HS_ENVIRONMENT" ]; then
+    CLOUDWATCH_OPTS="$CLOUDWATCH_OPTS --dimensions HsdnEnvironment=$HS_ENVIRONMENT"
+else 
+    CLOUDWATCH_OPTS="$CLOUDWATCH_OPTS --dimensions InstanceId=$instanceid"
+fi
+
 if [ -n "$PROFILE" ]; then
     CLOUDWATCH_OPTS="$CLOUDWATCH_OPTS --profile $PROFILE"
 fi
